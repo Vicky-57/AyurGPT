@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ashtang PDF Chatbot</title>
+    <!-- Google Fonts Inter & Outfit for premium look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #5C2E0B 0%, #8B4513 50%, #CD853F 100%);
+            min-height: 100vh;
+            position: relative;
+            color: #3E2723;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255, 223, 186, 0.15) 0%, transparent 55%),
+                radial-gradient(circle at 75% 75%, rgba(139, 69, 19, 0.25) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            padding: 30px 20px;
+        }
+
+        .header {
+            background: rgba(92, 46, 11, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 30px;
+            text-align: center;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 223, 186, 0.25);
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Outfit', sans-serif;
+            color: #FFECB3;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            letter-spacing: 1.5px;
+        }
+
+        .header p {
+            color: #FFE082;
+            font-size: 1.15rem;
+            opacity: 0.9;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .clear-chat-button {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            background: rgba(255, 236, 179, 0.1);
+            color: #FFECB3;
+            border: 1px solid rgba(255, 236, 179, 0.35);
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .clear-chat-button:hover {
+            background: rgba(255, 236, 179, 0.25);
+            border-color: #FFECB3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 236, 179, 0.15);
+        }
+
+        .streaming-indicator {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .streaming-indicator.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .chat-wrapper {
+            flex: 1;
+            background: rgba(253, 251, 242, 0.96);
+            border-radius: 24px;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(139, 69, 19, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            scroll-behavior: smooth;
+            background: linear-gradient(180deg, rgba(253, 251, 242, 0.8) 0%, rgba(24df, 244, 230, 0.95) 100%);
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: rgba(139, 69, 19, 0.05);
+            border-radius: 10px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(139, 69, 19, 0.25);
+            border-radius: 10px;
+            transition: background 0.3s;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 69, 19, 0.45);
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 20px 25px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            line-height: 1.7;
+            position: relative;
+            animation: messageSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.06);
+            border: 1px solid rgba(139, 69, 19, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .message:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 69, 19, 0.1);
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #70360B 0%, #8B4513 100%);
+            color: #FFECB3;
+            border-bottom-right-radius: 4px;
+            border-color: rgba(92, 46, 11, 0.2);
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.9);
+            color: #4E342E;
+            border-bottom-left-radius: 4px;
+            border-color: rgba(139, 69, 19, 0.1);
+        }
+
+        .message.streaming {
+            border-left: 4px solid #4CAF50;
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .message-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.user .message-header {
+            color: #FFE082;
+        }
+
+        .message.bot .message-header {
+            color: #8B4513;
+        }
+
+        .streaming-dots {
+            display: inline-flex;
+            gap: 3px;
+        }
+
+        .streaming-dot {
+            width: 6px;
+            height: 6px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: streamingPulse 1.4s infinite ease-in-out;
+        }
+
+        .streaming-dot:nth-child(1) { animation-delay: -0.32s; }
+        .streaming-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes streamingPulse {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .message-content {
+            font-size: 1.02rem;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .message-content p {
+            margin-bottom: 1.2em;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .sources {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: rgba(139, 69, 19, 0.05);
+            border-radius: 12px;
+            font-size: 0.88rem;
+            color: #8B4513;
+            border-left: 3px solid #CD853F;
+            font-weight: 500;
+        }
+
+        .sources strong {
+            color: #70360B;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: rgba(239, 83, 80, 0.08) !important;
+            border-left: 4px solid #ef5350 !important;
+            color: #c62828 !important;
+        }
+
+        .input-container {
+            padding: 25px 35px;
+            background: rgba(92, 46, 11, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 223, 186, 0.15);
+            border-radius: 0 0 24px 24px;
+        }
+
+        .input-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 16px 26px;
+            border: 2px solid rgba(255, 223, 186, 0.2);
+            border-radius: 30px;
+            background: rgba(253, 251, 242, 0.95);
+            color: #3E2723;
+            font-size: 1.05rem;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+        }
+
+        .input-field::placeholder {
+            color: #A1887F;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        .input-field:focus {
+            border-color: #FFE082;
+            box-shadow: 0 0 20px rgba(255, 224, 130, 0.25);
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .send-button {
+            padding: 16px 30px;
+            background: linear-gradient(135deg, #D84315 0%, #BF360C 100%);
+            color: #FFECB3;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+            min-width: 130px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(216, 67, 21, 0.4);
+            background: linear-gradient(135deg, #FF5722 0%, #D84315 100%);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 60px 40px;
+            color: #8D6E63;
+            background: rgba(255, 255, 255, 0.45);
+            border-radius: 24px;
+            border: 2px dashed rgba(139, 69, 19, 0.25);
+            max-width: 700px;
+            margin: 40px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        .welcome-message h2 {
+            font-family: 'Outfit', sans-serif;
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .welcome-message p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        .om-symbol {
+            font-size: 2.8rem;
+            color: #8B4513;
+            margin-bottom: 15px;
+            display: block;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px 10px;
+            }
+            
+            .header {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.85rem;
+            }
+
+            .clear-chat-button {
+                position: static;
+                margin: 15px auto 0 auto;
+                width: fit-content;
+            }
+            
+            .message {
+                max-width: 90%;
+                padding: 16px 20px;
+            }
+            
+            .input-container {
+                padding: 20px;
+            }
+            
+            .input-field {
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            
+            .send-button {
+                padding: 14px 22px;
+                min-width: 100px;
+                font-size: 0.95rem;
+            }
+
+            .messages {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕉️ अष्टांग चिकित्सास्थान</h1>
+            <p>Ask me anything about Ayurvedic knowledge from the classical texts</p>
+            <button class="clear-chat-button" id="clear-btn" title="Clear chat history">🗑️ Clear Chat</button>
+            <div class="streaming-indicator" id="streaming-indicator">
+                🔄 Streaming...
+            </div>
+        </div>
+
+        <div class="chat-wrapper">
+            <div class="messages" id="messages">
+                <div class="welcome-message">
+                    <span class="om-symbol">🕉️</span>
+                    <h2>स्वागतम् | Welcome</h2>
+                    <p>I am here to guide you through the wisdom of Ashtanga Ayurveda based on the classical texts in my knowledge base. Ask me questions about Ayurvedic principles, treatments, or concepts!</p>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <form class="input-form" id="chat-form">
+                    <input 
+                        type="text" 
+                        class="input-field" 
+                        id="user-input" 
+                        placeholder="Ask about Ayurvedic concepts, doshas, treatments..." 
+                        autocomplete="off"
+                        required
+                    >
+                    <button type="submit" class="send-button" id="send-button">
+                        प्रेष | Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ChatBot {
+            constructor() {
+                this.messages = document.getElementById('messages');
+                this.form = document.getElementById('chat-form');
+                this.input = document.getElementById('user-input');
+                this.button = document.getElementById('send-button');
+                this.clearBtn = document.getElementById('clear-btn');
+                this.streamingIndicator = document.getElementById('streaming-indicator');
+                this.currentStreamingMessage = null;
+                
+                this.setupEventListeners();
+                this.focusInput();
+                this.loadHistory(); // Reload history on load
+            }
+
+            setupEventListeners() {
+                this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.handleSubmit(e);
+                    }
+                });
+                if (this.clearBtn) {
+                    this.clearBtn.addEventListener('click', () => this.clearHistory());
+                }
+            }
+
+            focusInput() {
+                this.input.focus();
+            }
+
+            async loadHistory() {
+                try {
+                    const response = await fetch('/api/history');
+                    if (!response.ok) throw new Error('Failed to fetch history');
+                    const data = await response.json();
+                    
+                    if (data.history && data.history.length > 0) {
+                        // Remove welcome message
+                        const welcomeMsg = this.messages.querySelector('.welcome-message');
+                        if (welcomeMsg) {
+                            welcomeMsg.remove();
+                        }
+                        
+                        data.history.forEach(msg => {
+                            const sender = msg.role === 'user' ? 'user' : 'bot';
+                            let sourcesList = [];
+                            if (msg.sources) {
+                                if (Array.isArray(msg.sources)) {
+                                    sourcesList = msg.sources;
+                                } else {
+                                    try {
+                                        sourcesList = JSON.parse(msg.sources);
+                                    } catch (e) {
+                                        sourcesList = [msg.sources];
+                                    }
+                                }
+                            }
+                            this.addMessage(msg.content, sender, false, sourcesList);
+                        });
+                        this.scrollToBottom();
+                    }
+                } catch (error) {
+                    console.error('Error loading history:', error);
+                }
+            }
+
+            async clearHistory() {
+                if (!confirm("Are you sure you want to clear your chat history? This will delete all messages permanently.")) {
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/clear_session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        this.messages.innerHTML = `
+                            <div class="welcome-message">
+                                <span class="om-symbol">🕉️</span>
+                                <h2>स्वागतम् | Welcome</h2>
+                                <p>I am here to guide you through the wisdom of Ashtanga Ayurveda based on the classical texts in my knowledge base. Ask me questions about Ayurvedic principles, treatments, or concepts!</p>
+                            </div>
+                        `;
+                    } else {
+                        alert("Failed to clear chat history.");
+                    }
+                } catch (error) {
+                    console.error('Error clearing history:', error);
+                }
+            }
+
+            handleSubmit(e) {
+                e.preventDefault();
+                
+                const question = this.input.value.trim();
+                if (!question) return;
+
+                this.addMessage(question, 'user');
+                this.input.value = '';
+                this.setLoading(true);
+
+                this.askQuestionStreaming(question).catch(error => {
+                    console.error('Error:', error);
+                    this.addMessage('I apologize, but I encountered an error while processing your question. Please try again.', 'bot', true);
+                }).finally(() => {
+                    this.setLoading(false);
+                    this.focusInput();
+                });
+            }
+
+            addMessage(content, sender, isError = false, sources = []) {
+                const welcomeMsg = this.messages.querySelector('.welcome-message');
+                if (welcomeMsg) {
+                    welcomeMsg.remove();
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                if (isError) messageDiv.classList.add('error-message');
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'message-header';
+                headerDiv.textContent = sender === 'user' ? '🙏 You' : '📿 Ayurveda Guide';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = content;
+                
+                messageDiv.appendChild(headerDiv);
+                messageDiv.appendChild(contentDiv);
+
+                if (sources && sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'sources';
+                    sourcesDiv.innerHTML = `<strong>📚 Sources:</strong> ${sources.join(', ')}`;
+                    messageDiv.appendChild(sourcesDiv);
+                }
+
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+                return messageDiv;
+            }
+
+            createStreamingMessage() {
+                const welcomeMsg = this.messages.querySelector('.welcome-message');
+                if (welcomeMsg) {
+                    welcomeMsg.remove();
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot streaming';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'message-header';
+                headerDiv.innerHTML = `📿 Ayurveda Guide 
+                    <div class="streaming-dots">
+                        <div class="streaming-dot"></div>
+                        <div class="streaming-dot"></div>
+                        <div class="streaming-dot"></div>
+                    </div>`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                messageDiv.appendChild(headerDiv);
+                messageDiv.appendChild(contentDiv);
+                this.messages.appendChild(messageDiv);
+                
+                this.scrollToBottom();
+                return { messageDiv, contentDiv, headerDiv };
+            }
+
+            async askQuestionStreaming(query) {
+                try {
+                    const response = await fetch('/api/ask_stream', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({ query: query })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+
+                    const { messageDiv, contentDiv, headerDiv } = this.createStreamingMessage();
+                    this.currentStreamingMessage = { messageDiv, contentDiv, headerDiv };
+                    
+                    this.streamingIndicator.classList.add('active');
+
+                    let buffer = '';
+                    let sources = [];
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    
+                                    if (data.chunk) {
+                                        contentDiv.textContent += data.chunk;
+                                        this.scrollToBottom();
+                                    }
+                                    
+                                    if (data.sources && data.sources.length > 0) {
+                                        sources = data.sources;
+                                    }
+                                    
+                                    if (data.complete) {
+                                        if (data.formatted_text) {
+                                            contentDiv.textContent = data.formatted_text;
+                                        }
+                                        this.finalizeStreamingMessage(messageDiv, headerDiv, sources);
+                                        break;
+                                    }
+
+                                    if (data.answer && !data.chunk) {
+                                        contentDiv.textContent = data.answer;
+                                        if (data.sources && data.sources.length > 0) {
+                                            sources = data.sources;
+                                        }
+                                        this.finalizeStreamingMessage(messageDiv, headerDiv, sources);
+                                        break;
+                                    }
+
+                                    if (data.error) {
+                                        contentDiv.textContent = data.answer || 'An error occurred.';
+                                        messageDiv.classList.add('error-message');
+                                        this.finalizeStreamingMessage(messageDiv, headerDiv, []);
+                                        break;
+                                    }
+                                    
+                                } catch (e) {
+                                    console.error('Error parsing streaming data:', e);
+                                }
+                            }
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    if (this.currentStreamingMessage) {
+                        const { messageDiv, contentDiv } = this.currentStreamingMessage;
+                        contentDiv.textContent = 'I apologize, but I encountered an error while processing your question. Please try again.';
+                        messageDiv.classList.add('error-message');
+                        this.finalizeStreamingMessage(messageDiv, null, []);
+                    } else {
+                        this.addMessage('I apologize, but I encountered an error while processing your question. Please try again.', 'bot', true);
+                    }
+                } finally {
+                    this.streamingIndicator.classList.remove('active');
+                    this.currentStreamingMessage = null;
+                }
+            }
+
+            finalizeStreamingMessage(messageDiv, headerDiv, sources) {
+                messageDiv.classList.remove('streaming');
+                if (headerDiv) {
+                    headerDiv.innerHTML = '📿 Ayurveda Guide';
+                }
+
+                if (sources && sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'sources';
+                    sourcesDiv.innerHTML = `<strong>📚 Sources:</strong> ${sources.join(', ')}`;
+                    messageDiv.appendChild(sourcesDiv);
+                }
+
+                this.scrollToBottom();
+            }
+
+            setLoading(isLoading) {
+                if (isLoading) {
+                    this.button.disabled = true;
+                    this.button.textContent = 'Searching...';
+                } else {
+                    this.button.disabled = false;
+                    this.button.textContent = 'प्रेष | Send';
+                }
+            }
+
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.messages.scrollTop = this.messages.scrollHeight;
+                }, 50);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatBot();
+        });
+    </script>
+</body>
+</html>

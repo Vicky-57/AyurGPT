@@ -1,0 +1,6 @@
+Flask
+openai
+PyMuPDF
+faiss-cpu
+Flask
+flask-cors
