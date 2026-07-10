@@ -1,0 +1,15 @@
+.git
+.gitignore
+__pycache__
+env/
+venv/
+*.pdf
+chroma_db/
+qdrant_db/
+.env
+Dockerfile
+render.yaml
+README.md
+task.md
+implementation_plan.md
+walkthrough.md

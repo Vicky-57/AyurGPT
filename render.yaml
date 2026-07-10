@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: sanskrit-rag-chatbot
+    env: docker
+    plan: free
+    dockerFilePath: Dockerfile
+    envVars:
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_DB_NAME
+        value: postgres
+      - key: SUPABASE_DB_USER
+        value: postgres
+      - key: SUPABASE_DB_PASS
+        sync: false
+      - key: SUPABASE_DB_PORT
+        value: "5432"
+      - key: SECRET_KEY
+        generateValue: true
